@@ -1,9 +1,6 @@
 library(data.table)
 
-roc <- function(dt, dt_act, model, model_name, pred_func="predict(object=m0, newdata=dt0, type=\"response\")", prob_thresh=seq(from=0, to=1, by=0.01)) {
-  m0 <- model
-  dt0 <- dt
-  
+roc <- function(dt, dt_act, model, model_name, pred_func="predict(object=model, newdata=dt, type=\"response\")", prob_thresh=seq(from=0, to=1, by=0.01)) {
   x_out <- lapply(prob_thresh,
                   function(x) {
                     x_prob <- eval(parse(text=pred_func))
