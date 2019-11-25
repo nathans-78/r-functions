@@ -1,4 +1,4 @@
-library(data.table) 
+library(data.table)
 
 bow <- function(text_list, n_gram=1, all_preceding_n_grams=TRUE, data.table_output=FALSE) {
   x <- text_list
