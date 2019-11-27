@@ -16,7 +16,16 @@ roc <- function(dt, dt_act, model, model_name, pred_func="predict(object=model, 
                     x_res <- data.table(model=model_name, prob_threshold=x, tnr=tnr, fpr=fpr, fnr=fnr, tpr=tpr, precision=precision, recall=recall, f1_score=f1_score)
                     return(x_res)
                   })
-  
   x_out <- rbindlist(l=x_out, use.names=TRUE, fill=FALSE)
-  return(x_out)
+  
+  auc <- x_out[, .N, by=.(fpr, tpr)][, !c("N")][order(fpr, tpr)]
+  auc[, fpr_prev:=c(NA, auc[1:(auc[, .N]-1), fpr])]
+  auc[, tpr_prev:=c(NA, auc[1:(auc[, .N]-1), tpr])]
+  auc[, tpr_min:=ifelse(abs(tpr_prev)<abs(tpr), tpr_prev, tpr)]
+  auc[, tpr_max:=ifelse(abs(tpr_prev)>=abs(tpr), tpr_prev, tpr)]
+  auc[, area:=(fpr-fpr_prev)*(tpr_min + 0.5*(tpr_max-tpr_min))]
+  auc <- auc[!is.na(area), sum(area)]
+  
+  return(list("roc_dt"=x_out,
+              "auc"=auc))
 }
