@@ -20,7 +20,7 @@ permutation_importance <- function(dt, y, model, model_name, pred_func="predict(
                         y_loss <- -sum(log(y_loss_temp))
                         dt <- dt_temp # return original dataset
                         
-                        # log-loss based based on each randomised permutation for selected variable
+                        # log-loss based on each randomised permutation for selected variable
                         x_out2 <- lapply(1:n_perm,
                                          function(x2) {
                                            dt_2 <- dt
@@ -41,19 +41,27 @@ permutation_importance <- function(dt, y, model, model_name, pred_func="predict(
                         x_char <- sapply(dt, is.character)
                         x_char <- names(x_char[x_char==TRUE])
                         dt[, c(x_char):=lapply(.SD, as.factor), .SDcols=x_char]
+                        dt <- data.table(model.matrix(~., data=dt)[, -1])
+                        y_prob <- eval(parse(text=pred_func)) # output of probabilities per class
+                        y_loss_temp <- cbind(data.table(y_prob), data.table(y_act=dt[, get(y)])) # combine matrix of probabilities for each class
+                        y_loss_temp <- sapply(1:dt[, .N], # iterate through each prediction and select only the output with their respective actual class
+                                              function(i) {
+                                                y_loss_vec <- y_loss_temp[i, get(y_act)]
+                                                return(y_loss_vec)
+                                              })
+                        y_loss <- -sum(log(y_loss_temp))
+                        dt <- dt_temp # return original dataset
                         
+                        # Log-loss based on each randomised permutation for selected variable
+                        x_out2 <- lapply(1:n_perm,
+                                         function(x2) {
+                                           dt_2 <- dt
+                                           dt_2[, (x1):=dt_2[sample(x=1:dt_2[, .N], size=dt_2[, .N], replace=FALSE), get(x1)]]
+                                           dt_2 <- data.table(model.matrix(~., data=dt_2)[, -1])
+                                         })
                       } else {
                         return(NULL)
                       }
                     }
-                    
-                    x_out2 <- lapply(1:n_perm,
-                                     function(x2) {
-                                       dt_2 <- dt
-                                       dt_2[, (x1):=dt_2[sample(x=1:dt_2[, .N], size=dt_2[, .N], replace=FALSE), get(x1)]]
-                                       if (loss=="logloss") {
-                                         y_class <- levels
-                                       }
-                                     })
                   })
 }
