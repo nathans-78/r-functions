@@ -13,11 +13,15 @@ permutation_importance <- function(dt, y, model, model_name, pred_func="predict(
                          dt_temp <- dt # dummy temp table to replaced by original
                          x_char <- sapply(dt, is.character) # transform character variables to factor, maintain order in model.matrix pivot
                          x_char <- names(x_char[x_char==TRUE])
-                         dt[, c(x_char):=lapply(.SD, as.factor), .SDcols=x_char]
+                         suppressWarnings(dt[, c(x_char):=lapply(.SD, as.factor), .SDcols=x_char])
                          dt <- data.table(dt[, ..y], model.matrix(~., data=dt[, .SD, .SDcols=-y])[, -1])
                          y_prob <- eval(parse(text=pred_func)) # output of probabilities
                          y_prob <- data.table(actual=dt[, get(y)], y_prob)
-                         y_loss_temp <- y_prob[, ifelse(actual==1, y_prob, 1-y_prob)]
+                         y_loss_temp <- sapply(1:dt[, .N],
+                                               function(i) {
+                                                 return(max(1e-04, y_prob[i, ifelse(actual==1, y_prob, 1-y_prob)]))
+                                               })
+                         # y_loss_temp <- y_prob[, ifelse(actual==1, y_prob, 1-y_prob)]
                          y_loss <- -sum(log(y_loss_temp))
                          dt <- dt_temp # return original dataset
                          
@@ -31,13 +35,17 @@ permutation_importance <- function(dt, y, model, model_name, pred_func="predict(
                                             dt_2[, (x1):=copy(dt_2[sample(x=1:dt_2[, .N], size=dt_2[, .N], replace=FALSE), get(x1)])]
                                             dt_2 <- data.table(dt_2[, ..y], model.matrix(~., data=dt_2[, .SD, .SDcols=-y])[, -1])
                                             if (is.null(newdata_command_update)) {
-                                              y_2_prob <- eval(parse(text=gsub("newdata=dt,", "newdata=dt_2,", pred_func)))
+                                              y_2_prob <- eval(parse(text=gsub("newdata=dt", "newdata=dt_2", pred_func)))
                                             } else {
-                                              y_2_prob <- eval(parse(text=gsub(paste0(newdata_command_update, "=dt,", newdata_command_update, "=dt_2,", pred_func))))
+                                              y_2_prob <- eval(parse(text=gsub(paste0(newdata_command_update, "=dt", newdata_command_update, "=dt_2", pred_func))))
                                             }
                                             y_2_prob <- data.table(actual=dt_2[, get(y)], y_2_prob)
-                                            y_2_loss_temp <- y_2_prob[, ifelse(actual==1, y_2_prob, 1-y_2_prob)]
-                                            y_2_loss <- -sum(log_y_2_loss_temp)
+                                            y_2_loss_temp <- sapply(1:dt_2[, .N],
+                                                                    function(i) {
+                                                                      return(max(1e-04, y_2_prob[i, ifelse(actual==1, y_2_prob, 1-y_2_prob)]))
+                                                                    })
+                                            # y_2_loss_temp <- y_2_prob[, ifelse(actual==1, y_2_prob, 1-y_2_prob)]
+                                            y_2_loss <- -sum(log(y_2_loss_temp))
                                             dt_2 <- data.table(model_name=model_name, variable=x1, iteration=x2, loss_func_diff=y_2_loss-y_loss)
                                             return(dt_2)
                                           })
@@ -54,8 +62,7 @@ permutation_importance <- function(dt, y, model, model_name, pred_func="predict(
                          y_loss_temp <- cbind(data.table(y_prob), data.table(y_act=dt[, as.character(get(y))])) # combine matrix of probabilities for each class
                          y_loss_temp <- sapply(1:dt[, .N], # iterate through each prediction and select only the output with their respective actual class
                                                function(i) {
-                                                 y_loss_vec <- max(1e-04, y_loss_temp[i, get(y_act)])
-                                                 return(y_loss_vec)
+                                                 return(max(1e-04, y_loss_temp[i, get(y_act)]))
                                                })
                          y_loss <- -sum(log(y_loss_temp))
                          dt <- dt_temp # return original dataset
@@ -70,15 +77,14 @@ permutation_importance <- function(dt, y, model, model_name, pred_func="predict(
                                             dt_2[, (x1):=dt_2[sample(x=1:dt_2[, .N], size=dt_2[, .N], replace=FALSE), get(x1)]]
                                             dt_2 <- data.table(dt_2[, ..y], model.matrix(~., data=dt_2[, .SD, .SDcols=-y])[, -1])
                                             if (is.null(newdata_command_update)) {
-                                              y_2_prob <- eval(parse(text=gsub("newdata=dt,", "newdata=dt_2,", pred_func)))
+                                              y_2_prob <- eval(parse(text=gsub("newdata=dt", "newdata=dt_2", pred_func)))
                                             } else {
-                                              y_2_prob <- eval(parse(text=gsub(paste0(newdata_command_update, "=dt,", newdata_command_update, "=dt_2,", pred_func))))
+                                              y_2_prob <- eval(parse(text=gsub(paste0(newdata_command_update, "=dt", newdata_command_update, "=dt_2", pred_func))))
                                             }
                                             y_2_loss_temp <- cbind(data.table(y_2_prob), data.table(y_act=dt_2[, as.character(get(y))])) # output of probabilities per class
                                             y_2_loss_temp <- sapply(1:dt_2[, .N], # iterate through each prediction and select only the output with their respective actual class
                                                                     function(i) {
-                                                                      y_2_loss_vec <- max(1e-04, y_2_loss_temp[i, get(y_act)])
-                                                                      return(y_2_loss_vec)
+                                                                      return(max(1e-04, y_2_loss_temp[i, get(y_act)]))
                                                                     })
                                             y_2_loss <- -sum(log(y_2_loss_temp))
                                             dt_2_out <- data.table(model_name=model_name, variable=x1, iteration=x2, loss_func_diff=y_2_loss-y_loss)
@@ -94,14 +100,14 @@ permutation_importance <- function(dt, y, model, model_name, pred_func="predict(
                        dt_temp <- dt # dummy temp table to replaced by original
                        x_char <- sapply(dt, is.character) # transform character variables to factor, maintain order in model.matrix pivot
                        x_char <- names(x_char[x_char==TRUE])
-                       dt[, c(x_char):=lapply(.SD, as.factor), .SDcols=x_char]
+                       suppressWarnings(dt[, c(x_char):=lapply(.SD, as.factor), .SDcols=x_char])
                        dt <- data.table(dt[, ..y], model.matrix(~., data=dt[, .SD, .SDcols=-y])[, -1])
                        y_pred <- eval(parse(text=pred_func)) # regression predictions
                        y_loss <- sum((dt[, get(y)]-y_pred)^2) # sse
                        dt <- dt_temp # return original dataset
                        
                        # see based on each randomised permutation for each variable
-                       x_out2 <- sapply(1:n_perm,
+                       x_out2 <- lapply(1:n_perm,
                                         function(x2) {
                                           dt_2 <- dt
                                           x_2_char <- sapply(dt_2, is.character) # transform character variables to factor, maintain order in model.matrix pivot
@@ -110,13 +116,13 @@ permutation_importance <- function(dt, y, model, model_name, pred_func="predict(
                                           dt_2[, (x1):=copy(dt_2[sample(x=1:dt_2[, .N], size=dt_2[, .N], replace=FALSE), get(x1)])]
                                           dt_2 <- data.table(dt_2[, ..y], model.matrix(~., data=dt_2[, .SD, .SDcols=-y])[, -1])
                                           if (is.null(newdata_command_update)) {
-                                            y_2_pred <- eval(parse(text=gsub("newdata=dt,", "newdata=dt_2,", pred_func)))
+                                            y_2_pred <- eval(parse(text=gsub("newdata=dt", "newdata=dt_2", pred_func)))
                                           } else {
-                                            y_2_pred <- eval(parse(text=gsub(paste0(newdata_command_update, "=dt,", newdata_command_update, "=dt_2,", pred_func))))
+                                            y_2_pred <- eval(parse(text=gsub(paste0(newdata_command_update, "=dt", newdata_command_update, "=dt_2", pred_func))))
                                           }
-                                          y_2_pred <- sum((dt_2[, get(y)]-y_2_pred)^2)
-                                          dt_2 <- data.table(model_name=model_name, variable=x1, iteration=x2, loss_func_diff=y_2_pred-y_pred)
-                                          return(dt_2)
+                                          y_2_loss <- sum((dt_2[, get(y)]-y_2_pred)^2)
+                                          dt_2_out <- data.table(model_name=model_name, variable=x1, iteration=x2, loss_func_diff=y_2_loss-y_loss)
+                                          return(dt_2_out)
                                         })
                        x_out2 <- rbindlist(l=x_out2, use.names=TRUE, fill=TRUE)
                        return(x_out2)
