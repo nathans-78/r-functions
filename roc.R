@@ -2,9 +2,9 @@ library(data.table)
 library(parallel)
 
 roc <- function(dt, dt_act, model, model_name, pred_func="predict(object=model, newdata=dt, type=\"response\")", prob_thresh=seq(from=0, to=1, by=0.01), no_cores=1) {
+  x_prob <- eval(parse(text=pred_func))
   x_out <- mclapply(prob_thresh,
                     function(x) {
-                      x_prob <- eval(parse(text=pred_func))
                       x_pred <- ifelse(x_prob>=x, 1, 0)
                       x_dt <- data.table(pred=x_pred, actual=dt_act)
                       tnr <- x_dt[pred==0 & actual==0, .N]/x_dt[actual==0, .N]
