@@ -38,7 +38,7 @@ permutation_importance <- function(dt, y, model, model_name, pred_func="predict(
                                               if (is.null(newdata_command_update)) {
                                                 y_2_prob <- eval(parse(text=gsub("newdata=dt", "newdata=dt_2", pred_func)))
                                               } else {
-                                                y_2_prob <- eval(parse(text=gsub(paste0(newdata_command_update, "=dt", newdata_command_update, "=dt_2", pred_func))))
+                                                y_2_pred <- eval(parse(text=newdata_command_update)) # for new data after permuting values, as is confusing, need to update this
                                               }
                                               y_2_prob <- data.table(actual=dt_2[, get(y)], y_2_prob)
                                               y_2_loss_temp <- sapply(1:dt_2[, .N],
@@ -81,7 +81,7 @@ permutation_importance <- function(dt, y, model, model_name, pred_func="predict(
                                               if (is.null(newdata_command_update)) {
                                                 y_2_prob <- eval(parse(text=gsub("newdata=dt", "newdata=dt_2", pred_func)))
                                               } else {
-                                                y_2_prob <- eval(parse(text=gsub(paste0(newdata_command_update, "=dt", newdata_command_update, "=dt_2", pred_func))))
+                                                y_2_pred <- eval(parse(text=newdata_command_update)) # for new data after permuting values, as is confusing, need to update this
                                               }
                                               y_2_loss_temp <- cbind(data.table(y_2_prob), data.table(y_act=dt_2[, as.character(get(y))])) # output of probabilities per class
                                               y_2_loss_temp <- sapply(1:dt_2[, .N], # iterate through each prediction and select only the output with their respective actual class
@@ -121,7 +121,7 @@ permutation_importance <- function(dt, y, model, model_name, pred_func="predict(
                                             if (is.null(newdata_command_update)) {
                                               y_2_pred <- eval(parse(text=gsub("newdata=dt", "newdata=dt_2", pred_func)))
                                             } else {
-                                              y_2_pred <- eval(parse(text=gsub(paste0(newdata_command_update, "=dt", newdata_command_update, "=dt_2", pred_func))))
+                                              y_2_pred <- eval(parse(text=newdata_command_update)) # for new data after permuting values, as is confusing, need to update this
                                             }
                                             y_2_loss <- sum((dt_2[, get(y)]-y_2_pred)^2)
                                             dt_2_out <- data.table(model_name=model_name, variable=x1, iteration=x2, loss_func_diff=y_2_loss-y_loss)
