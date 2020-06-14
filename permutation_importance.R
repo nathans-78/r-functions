@@ -1,7 +1,11 @@
-library(data.table)
-library(parallel)
-
 permutation_importance <- function(dt, y, model, model_name, pred_func="predict(object=model, newdata=dt, type=\"response\")", loss="logloss", class_0_1_prob=TRUE, n_perm=20, no_cores=1) {
+  # load libraries
+  library(data.table)
+  library(parallel)
+  
+  # convert to data.table class
+  setDT(dt)
+  
   # names of predictor variables
   dt_x_var <- names(dt[, .SD, .SDcols=-y])
   
