@@ -1,12 +1,11 @@
-library(data.table)
-library(parallel)
-
-roc <- function(dt, dt_act, model, model_name, pred_func="predict(object=model, newdata=dt, type=\"response\")", prob_thresh=seq(from=0, to=1, by=0.01), no_cores=1) {
-  x_prob <- eval(parse(text=pred_func))
+roc <- function(prob_values, labels, prob_thresh=seq(from=0, to=1, by=0.01), no_cores=1) {
+  library(data.table)
+  library(parallel)
+  
   x_out <- mclapply(prob_thresh,
                     function(x) {
-                      x_pred <- ifelse(x_prob>=x, 1, 0)
-                      x_dt <- data.table(pred=x_pred, actual=dt_act)
+                      x_pred <- ifelse(prob_values>=x, 1, 0)
+                      x_dt <- data.table(pred=x_pred, actual=labels)
                       tnr <- x_dt[pred==0 & actual==0, .N]/x_dt[actual==0, .N]
                       fpr <- x_dt[pred==1 & actual==0, .N]/x_dt[actual==0, .N]
                       fnr <- x_dt[pred==0 & actual==1, .N]/x_dt[actual==1, .N]
