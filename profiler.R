@@ -21,12 +21,14 @@ profiler <- function(dt_pop_1, dt_pop_2, variables, no_cores=1) {
                      # population distribution
                      dt_2 <- dt_pop_1[!is.na(get(x1)), .N, get(x1)]
                      colnames(dt_2) <- c("value","pop_1_count")
+                     dt_2[, value:=as.character(value)]
                      dt_2[, attribute:=x1]
                      dt_2[, pop_1_percent:=pop_1_count/sum(pop_1_count), by=.(attribute)]
                      
                      # sample distribution
                      dt_3 <- dt_pop_2[!is.na(get(x1)), .N, get(x1)]
                      colnames(dt_3) <- c("value","pop_2_count")
+                     dt_3[, value:=as.character(value)]
                      dt_3[, attribute:=x1]
                      dt_3[, pop_2_percent:=pop_2_count/sum(pop_2_count), by=.(attribute)]
                      
