@@ -59,8 +59,8 @@ profiler <- function(dt_pop_1, dt_pop_2, variables, no_cores=1) {
                                        })
                      dt_4[, index:=ifelse(pop_1_percent==0 | pop_2_percent==0, Inf, (pop_1_percent/pop_2_percent)-1)]
                      dt_4[, z_score:=z_score]
-                     dt_4[, woe:=log(x=(pop_1_percent_dummy/pop_2_percent_dummy), base=exp(1))]
-                     dt_4[, information_value:=(pop_1_percent_dummy-pop_2_percent_dummy)*woe]
+                     dt_4[, weight_of_evidence:=log(x=(pop_1_percent_dummy/pop_2_percent_dummy), base=exp(1))]
+                     dt_4[, information_value:=(pop_1_percent_dummy-pop_2_percent_dummy)*weight_of_evidence]
                      dt_4[, pop_1_count_dummy:=NULL]
                      dt_4[, pop_1_percent_dummy:=NULL]
                      dt_4[, pop_2_count_dummy:=NULL]
