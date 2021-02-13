@@ -1,6 +1,6 @@
 ### Set profiler function ###
 ## Profiler.
-profiler <- function(dt_pop_1, dt_pop_2, id, variables, no_cores=1) {
+profiler <- function(dt_pop_1, dt_pop_2, variables, no_cores=1) {
   # load libraries
   library(data.table)
   library(parallel)
@@ -19,13 +19,13 @@ profiler <- function(dt_pop_1, dt_pop_2, id, variables, no_cores=1) {
                      start_time <- proc.time()
                      
                      # population distribution
-                     dt_2 <- dt_pop_1[!is.na(get(x1)), uniqueN(get(id)), get(x1)]
+                     dt_2 <- dt_pop_1[!is.na(get(x1)), .N, get(x1)]
                      colnames(dt_2) <- c("value","pop_1_count")
                      dt_2[, attribute:=x1]
                      dt_2[, pop_1_percent:=pop_1_count/sum(pop_1_count), by=.(attribute)]
                      
                      # sample distribution
-                     dt_3 <- dt_pop_2[!is.na(get(x1)), uniqueN(get(id)), get(x1)]
+                     dt_3 <- dt_pop_2[!is.na(get(x1)), .N, get(x1)]
                      colnames(dt_3) <- c("value","pop_2_count")
                      dt_3[, attribute:=x1]
                      dt_3[, pop_2_percent:=pop_2_count/sum(pop_2_count), by=.(attribute)]
@@ -44,7 +44,7 @@ profiler <- function(dt_pop_1, dt_pop_2, id, variables, no_cores=1) {
                      # Note we add dummy value to replace 0 counts
                      dt_4[, c("pop_1_count","pop_2_count"):=lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols=c("pop_1_count","pop_2_count")]
                      dt_4[, pop_1_count_dummy:=ifelse(pop_1_count==0, 1, pop_1_count)]
-                     dt_4[, pop_1_percent_dummy:=pop_1_count_dummy/sum(popu_1_count_dummy), by=.(attribute)]
+                     dt_4[, pop_1_percent_dummy:=pop_1_count_dummy/sum(pop_1_count_dummy), by=.(attribute)]
                      dt_4[, pop_2_count_dummy:=ifelse(pop_2_count==0, 1, pop_2_count)]
                      dt_4[, pop_2_percent_dummy:=pop_2_count_dummy/sum(pop_2_count_dummy), by=.(attribute)]
                      z_score <- sapply(1:nrow(dt_4),
@@ -55,7 +55,7 @@ profiler <- function(dt_pop_1, dt_pop_2, id, variables, no_cores=1) {
                                          z_val <- sign(z_val$estimate[1]-z_val$estimate[2])*sqrt(z_val$statistic)
                                          return(z_val)
                                        })
-                     dt_4[, index:=ifelse(pop_1_percent==0 | pop_2_percent==0, Inf, pop_1_percent/pop_2_percent)]
+                     dt_4[, index:=ifelse(pop_1_percent==0 | pop_2_percent==0, Inf, (pop_1_percent/pop_2_percent)-1)]
                      dt_4[, z_score:=z_score]
                      dt_4[, information_value:=(pop_1_percent_dummy-pop_2_percent_dummy)*log(x=(pop_1_percent_dummy/pop_2_percent_dummy), base=exp(1))]
                      dt_4[, pop_1_count_dummy:=NULL]
