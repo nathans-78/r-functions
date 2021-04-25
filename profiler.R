@@ -52,7 +52,7 @@ profiler <- function(dt_pop_1, dt_pop_2, agg_func = "count", agg_id, variables) 
                      
                    # combine stats
                    dt_4 <- merge(dt_2, dt_3, by.x = c("attribute","value"), by.y = c("attribute","value"), all = TRUE)
-                   dt_4[, c("pop_1_count","pop_1_percent","pop_2_count","pop_2_percent") := lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols=c("pop_1_count","pop_1_percent","pop_2_count","pop_2_percent")]
+                   dt_4[, c("pop_1_count","pop_1_percent","pop_2_count","pop_2_percent") := lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols = c("pop_1_count","pop_1_percent","pop_2_count","pop_2_percent")]
                      
                    # Evaluate z-scores per value proportion and information value
                    # Note we add dummy value to replace 0 counts
